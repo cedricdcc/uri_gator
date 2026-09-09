@@ -6,6 +6,12 @@ import type {
   DiscoveryOverview,
   StrategyTraceStep,
 } from '../../../src/core/types';
+
+export type {
+  ExtractedRDF,
+  DiscoveryOverview,
+  StrategyTraceStep,
+};
 import { Parser as N3Parser, Store as N3Store, Writer as N3Writer, type Quad } from 'n3';
 
 export interface TabularTriple {
