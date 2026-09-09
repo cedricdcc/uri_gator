@@ -18,7 +18,7 @@ export type {
   RDFFormat,
 };
 
-export { extractRDF, extractAllRDF } from './src/pipeline';
+export { extractRDF, extractAllRDF, extractRDF as default, extractRDF as wrx } from './src/pipeline';
 export { deriveConceptualUri, parseUriInfo, resolveRelativeUrl } from './src/core/uri';
 export { ProvenanceTracker } from './src/provenance/tracker';
 export { parseRfc8288LinkHeader, findLinkRelations } from './src/parsers/rfc8288-link';
