@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { ProvGraphData, ProvNode, ProvEdge } from '../../../services/wrx-client';
+import { ZoomIn, ZoomOut, RotateCcw, X, Info } from 'lucide-react';
 
 interface ProvGraphViewProps {
   graphData: ProvGraphData;
@@ -14,9 +15,9 @@ export default function ProvGraphView({ graphData }: ProvGraphViewProps) {
 
   // Calculate layout coordinates for nodes
   const layout = useMemo(() => {
-    const { nodes, edges } = graphData;
+    const { nodes } = graphData;
     const width = 800;
-    const height = 450;
+    const height = 440;
 
     const positions = new Map<string, { x: number; y: number }>();
     if (nodes.length === 0) return { positions, width, height };
@@ -75,7 +76,7 @@ export default function ProvGraphView({ graphData }: ProvGraphViewProps) {
 
   if (graphData.nodes.length === 0) {
     return (
-      <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+      <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.86rem' }}>
         No graph nodes available. Run an extraction to generate the interactive PROV-O graph.
       </div>
     );
@@ -84,35 +85,62 @@ export default function ProvGraphView({ graphData }: ProvGraphViewProps) {
   return (
     <div>
       {/* Legend & Controls bar */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px',
-        marginBottom: '14px',
-      }}>
-        {/* Color Legend */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.8rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '12px',
+        }}
+      >
+        {/* Color Taxonomy Legend */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.76rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-amber)', display: 'inline-block' }} />
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-amber)', display: 'inline-block' }} />
             <span style={{ color: 'var(--text-secondary)' }}>prov:Entity</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: '12px', height: '12px', borderRadius: '2px', background: 'var(--accent-cyan)', display: 'inline-block' }} />
+            <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'var(--accent-cyan)', display: 'inline-block' }} />
             <span style={{ color: 'var(--text-secondary)' }}>prov:Activity</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: '12px', height: '12px', borderRadius: '4px', background: 'var(--accent-violet)', display: 'inline-block' }} />
+            <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'var(--accent-violet)', display: 'inline-block' }} />
             <span style={{ color: 'var(--text-secondary)' }}>prov:Agent</span>
           </div>
         </div>
 
         {/* Zoom Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <button onClick={() => setZoom((z: number) => Math.min(2.5, z + 0.15))} className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.8rem' }}>+</button>
-          <button onClick={() => setZoom((z: number) => Math.max(0.4, z - 0.15))} className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.8rem' }}>-</button>
-          <button onClick={resetView} className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }}>Reset</button>
+          <button
+            type="button"
+            onClick={() => setZoom((z: number) => Math.min(2.5, z + 0.15))}
+            className="btn-secondary"
+            style={{ padding: '5px 8px' }}
+            aria-label="Zoom in"
+          >
+            <ZoomIn size={13} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setZoom((z: number) => Math.max(0.4, z - 0.15))}
+            className="btn-secondary"
+            style={{ padding: '5px 8px' }}
+            aria-label="Zoom out"
+          >
+            <ZoomOut size={13} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={resetView}
+            className="btn-secondary"
+            style={{ padding: '5px 10px', fontSize: '0.74rem' }}
+            aria-label="Reset zoom and pan"
+          >
+            <RotateCcw size={12} aria-hidden="true" />
+            <span>Reset</span>
+          </button>
         </div>
       </div>
 
@@ -120,10 +148,10 @@ export default function ProvGraphView({ graphData }: ProvGraphViewProps) {
       <div
         style={{
           width: '100%',
-          height: '480px',
-          background: '#060912',
+          height: '440px',
+          background: 'var(--bg-code)',
           border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: 'var(--radius-sm)',
           overflow: 'hidden',
           position: 'relative',
           cursor: isDragging ? 'grabbing' : 'grab',
@@ -133,18 +161,20 @@ export default function ProvGraphView({ graphData }: ProvGraphViewProps) {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        role="region"
+        aria-label="Interactive PROV-O Graph Visualizer"
       >
         <svg width="100%" height="100%" viewBox={`0 0 ${layout.width} ${layout.height}`}>
           <defs>
             <marker
               id="arrowhead"
-              markerWidth="8"
-              markerHeight="6"
-              refX="18"
-              refY="3"
+              markerWidth="7"
+              markerHeight="5"
+              refX="16"
+              refY="2.5"
               orient="auto"
             >
-              <polygon points="0 0, 8 3, 0 6" fill="rgba(255, 255, 255, 0.4)" />
+              <polygon points="0 0, 7 2.5, 0 5" fill="oklch(1 0 0 / 30%)" />
             </marker>
           </defs>
 
@@ -165,15 +195,15 @@ export default function ProvGraphView({ graphData }: ProvGraphViewProps) {
                     y1={src.y}
                     x2={tgt.x}
                     y2={tgt.y}
-                    stroke="rgba(255, 255, 255, 0.2)"
-                    strokeWidth="1.5"
+                    stroke="oklch(1 0 0 / 18%)"
+                    strokeWidth="1.2"
                     markerEnd="url(#arrowhead)"
                   />
                   <text
                     x={midX}
-                    y={midY - 6}
-                    fill="var(--text-muted)"
-                    fontSize="10"
+                    y={midY - 5}
+                    fill="#a1a1aa"
+                    fontSize="9.5"
                     fontFamily="var(--font-mono)"
                     textAnchor="middle"
                   >
@@ -203,42 +233,42 @@ export default function ProvGraphView({ graphData }: ProvGraphViewProps) {
                   {/* Circle for Entity */}
                   {n.type === 'entity' && (
                     <circle
-                      r="22"
+                      r="20"
                       fill={isSelected ? 'var(--accent-amber)' : 'rgba(245, 158, 11, 0.25)'}
                       stroke="var(--accent-amber)"
-                      strokeWidth={isSelected ? 3 : 1.5}
+                      strokeWidth={isSelected ? 2.5 : 1.2}
                     />
                   )}
 
                   {/* Rect for Activity */}
                   {n.type === 'activity' && (
                     <rect
-                      x="-32"
-                      y="-18"
-                      width="64"
-                      height="36"
-                      rx="6"
-                      fill={isSelected ? 'var(--accent-cyan)' : 'rgba(0, 240, 255, 0.25)'}
+                      x="-28"
+                      y="-16"
+                      width="56"
+                      height="32"
+                      rx="4"
+                      fill={isSelected ? 'var(--accent-cyan)' : 'rgba(2, 132, 199, 0.25)'}
                       stroke="var(--accent-cyan)"
-                      strokeWidth={isSelected ? 3 : 1.5}
+                      strokeWidth={isSelected ? 2.5 : 1.2}
                     />
                   )}
 
-                  {/* Hexagon / polygon for Agent */}
+                  {/* Hexagon for Agent */}
                   {n.type === 'agent' && (
                     <polygon
-                      points="0,-22 24,-10 24,14 0,26 -24,14 -24,-10"
-                      fill={isSelected ? 'var(--accent-violet)' : 'rgba(139, 92, 246, 0.25)'}
+                      points="0,-20 20,-9 20,11 0,22 -20,11 -20,-9"
+                      fill={isSelected ? 'var(--accent-violet)' : 'rgba(99, 102, 241, 0.25)'}
                       stroke="var(--accent-violet)"
-                      strokeWidth={isSelected ? 3 : 1.5}
+                      strokeWidth={isSelected ? 2.5 : 1.2}
                     />
                   )}
 
-                  {/* Label */}
+                  {/* Node Label */}
                   <text
-                    y="36"
-                    fill={isSelected ? 'var(--text-bright)' : 'var(--text-secondary)'}
-                    fontSize="11"
+                    y="32"
+                    fill={isSelected ? '#ffffff' : '#e4e4e7'}
+                    fontSize="10"
                     fontFamily="var(--font-mono)"
                     textAnchor="middle"
                     fontWeight={isSelected ? 600 : 400}
@@ -256,34 +286,50 @@ export default function ProvGraphView({ graphData }: ProvGraphViewProps) {
           <div
             style={{
               position: 'absolute',
-              bottom: '16px',
-              left: '16px',
-              right: '16px',
-              background: 'rgba(15, 23, 42, 0.95)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              padding: '14px 18px',
+              bottom: '12px',
+              left: '12px',
+              right: '12px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-xs)',
+              padding: '10px 14px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              fontSize: '0.85rem',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              fontSize: '0.82rem',
+              boxShadow: 'var(--shadow-panel)',
             }}
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className={`badge ${selectedNode.type === 'entity' ? 'badge-amber' : selectedNode.type === 'activity' ? 'badge-cyan' : 'badge-violet'}`}>
+                <span
+                  className={`badge ${
+                    selectedNode.type === 'entity'
+                      ? 'badge-amber'
+                      : selectedNode.type === 'activity'
+                      ? 'badge-cyan'
+                      : 'badge-violet'
+                  }`}
+                  style={{ fontSize: '0.66rem' }}
+                >
                   prov:{selectedNode.type}
                 </span>
                 <strong style={{ color: 'var(--text-primary)' }}>{selectedNode.label}</strong>
               </div>
-              <div className="text-mono" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '4px', wordBreak: 'break-all' }}>
+              <div
+                className="text-mono"
+                style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginTop: '2px', wordBreak: 'break-all' }}
+              >
                 {selectedNode.id}
               </div>
             </div>
-            <button onClick={() => setSelectedNode(null)} className="btn-ghost" style={{ fontSize: '0.8rem' }}>
-              ✕ Close
+            <button
+              onClick={() => setSelectedNode(null)}
+              className="btn-ghost"
+              style={{ padding: '4px', color: 'var(--text-muted)' }}
+              aria-label="Close details"
+            >
+              <X size={14} aria-hidden="true" />
             </button>
           </div>
         )}

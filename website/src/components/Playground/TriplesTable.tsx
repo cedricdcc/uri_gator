@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { TabularTriple } from '../../services/wrx-client';
+import { Search, Copy, Check, ExternalLink, Download, Inbox } from 'lucide-react';
 
 interface TriplesTableProps {
   triples: TabularTriple[];
@@ -10,10 +11,10 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
   const [search, setSearch] = useState('');
   const [prefixFilter, setPrefixFilter] = useState('all');
   const [page, setPage] = useState(1);
-  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const pageSize = 25;
 
-  const prefixOptions = ['all', 'schema:', 'dcterms:', 'prov:', 'rdf:', 'rdfs:'];
+  const prefixOptions = ['all', 'schema:', 'dcterms:', 'prov:', 'rdf:', 'rdfs:', 'foaf:'];
 
   // Filter triples by text and prefix
   const filteredTriples = useMemo(() => {
@@ -44,10 +45,10 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
   const totalPages = Math.max(1, Math.ceil(filteredTriples.length / pageSize));
   const displayedTriples = filteredTriples.slice((page - 1) * pageSize, page * pageSize);
 
-  const handleCopy = (text: string, label: string) => {
+  const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
-    setCopyFeedback(label);
-    setTimeout(() => setCopyFeedback(null), 2000);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 1800);
   };
 
   const handleDownloadNt = () => {
@@ -67,77 +68,96 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
   if (triples.length === 0) {
     return (
       <div className="glass-panel" style={{ padding: '48px', textAlign: 'center' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📊</div>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div style={{ color: 'var(--text-muted)', marginBottom: '12px' }}>
+          <Inbox size={32} style={{ margin: '0 auto' }} aria-hidden="true" />
+        </div>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
           No Triples Discovered Yet
         </h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '6px', maxWidth: '460px', margin: '6px auto 0' }}>
-          Enter a web URI in the search bar above and click "Extract RDF" to run the cascading discovery engine.
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: '4px', maxWidth: '440px', margin: '4px auto 0' }}>
+          Enter a web URI in the studio bar above and click "Extract RDF" to execute the cascading discovery engine.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', marginBottom: '36px' }}>
+    <div className="glass-panel" style={{ padding: '20px', marginBottom: '32px' }}>
       {/* Search bar and export buttons */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '14px',
-        marginBottom: '18px',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '16px',
+        }}
+      >
         {/* Search input */}
-        <div style={{ flex: '1 1 280px', position: 'relative' }}>
+        <div style={{ flex: '1 1 260px', position: 'relative' }}>
+          <div
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-muted)',
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <Search size={14} aria-hidden="true" />
+          </div>
           <input
-            type="text"
+            type="search"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
             placeholder="Filter by Subject, Predicate, or Object..."
-            className="input-control"
-            style={{ height: '38px', fontSize: '0.85rem', paddingLeft: '34px' }}
+            className="input-control text-mono"
+            style={{ height: '36px', fontSize: '0.82rem', paddingLeft: '34px' }}
+            aria-label="Filter triples by keyword"
           />
-          <div style={{
-            position: 'absolute',
-            left: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: 'var(--text-muted)',
-            fontSize: '0.8rem',
-            pointerEvents: 'none',
-          }}>
-            🔎
-          </div>
         </div>
 
         {/* Action export buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
-            onClick={() => handleCopy(turtleProv, 'turtle')}
+            onClick={() => handleCopy(turtleProv, 'turtle-all')}
             className="btn-secondary"
             style={{ padding: '6px 12px', fontSize: '0.78rem' }}
           >
-            {copyFeedback === 'turtle' ? '✓ Copied!' : 'Copy Turtle'}
+            {copiedKey === 'turtle-all' ? (
+              <>
+                <Check size={13} color="var(--accent-emerald)" aria-hidden="true" />
+                <span style={{ color: 'var(--accent-emerald)' }}>Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy size={13} aria-hidden="true" />
+                <span>Copy Turtle</span>
+              </>
+            )}
           </button>
           <button
             onClick={handleDownloadNt}
             className="btn-secondary"
             style={{ padding: '6px 12px', fontSize: '0.78rem' }}
           >
-            Download .nt
+            <Download size={13} aria-hidden="true" />
+            <span>Export .nt</span>
           </button>
         </div>
       </div>
 
       {/* Prefix filter tags */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '18px' }}>
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginRight: '4px' }}>
-          Prefixes:
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500, marginRight: '2px' }}>
+          Namespace Prefixes:
         </span>
         {prefixOptions.map((prefix) => (
           <button
@@ -149,11 +169,11 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
             className="btn-ghost"
             style={{
               background: prefixFilter === prefix ? 'var(--accent-cyan-dim)' : 'transparent',
-              color: prefixFilter === prefix ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-              border: '1px solid ' + (prefixFilter === prefix ? 'rgba(0, 240, 255, 0.3)' : 'var(--border-subtle)'),
-              padding: '3px 10px',
-              fontSize: '0.75rem',
-              borderRadius: 'var(--radius-full)',
+              color: prefixFilter === prefix ? 'var(--accent-cyan)' : 'var(--text-muted)',
+              border: '1px solid ' + (prefixFilter === prefix ? 'oklch(0.78 0.14 210 / 30%)' : 'var(--border-subtle)'),
+              padding: '2px 8px',
+              fontSize: '0.72rem',
+              borderRadius: 'var(--radius-xs)',
             }}
           >
             {prefix}
@@ -161,27 +181,33 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
         ))}
       </div>
 
-      {/* Table Container */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          textAlign: 'left',
-          fontSize: '0.85rem',
-          fontFamily: 'var(--font-mono)',
-        }}>
+      {/* Semantic Table Container */}
+      <div style={{ overflowX: 'auto', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xs)' }}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            textAlign: 'left',
+            fontSize: '0.82rem',
+            fontFamily: 'var(--font-mono)',
+          }}
+        >
+          <caption className="sr-only">Discovered RDF Triples Table</caption>
           <thead>
-            <tr style={{
-              borderBottom: '1px solid var(--border-subtle)',
-              color: 'var(--text-muted)',
-              fontSize: '0.75rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}>
-              <th style={{ padding: '12px 14px' }}>Subject</th>
-              <th style={{ padding: '12px 14px' }}>Predicate</th>
-              <th style={{ padding: '12px 14px' }}>Object</th>
-              <th style={{ padding: '12px 14px', width: '100px' }}>Graph</th>
+            <tr
+              style={{
+                background: 'var(--bg-surface)',
+                borderBottom: '1px solid var(--border-default)',
+                color: 'var(--text-muted)',
+                fontSize: '0.72rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              <th scope="col" style={{ padding: '10px 12px' }}>Subject</th>
+              <th scope="col" style={{ padding: '10px 12px' }}>Predicate</th>
+              <th scope="col" style={{ padding: '10px 12px' }}>Object</th>
+              <th scope="col" style={{ padding: '10px 12px', width: '90px' }}>Graph</th>
             </tr>
           </thead>
           <tbody>
@@ -189,47 +215,59 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
               <tr
                 key={t.id}
                 style={{
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                  transition: 'background 0.15s',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  transition: 'background 0.1s',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(1 0 0 / 2%)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 {/* Subject */}
-                <td style={{ padding: '10px 14px', verticalAlign: 'top', maxWidth: '280px', wordBreak: 'break-all' }}>
-                  <span
-                    onClick={() => handleCopy(t.subject, t.id + '-s')}
+                <td style={{ padding: '8px 12px', verticalAlign: 'top', maxWidth: '280px', wordBreak: 'break-all' }}>
+                  <button
+                    onClick={() => handleCopy(t.subject, `${t.id}-s`)}
                     title={`Click to copy: ${t.subject}`}
+                    className="btn-ghost"
                     style={{
                       color: 'var(--accent-cyan)',
-                      cursor: 'pointer',
+                      padding: 0,
+                      textAlign: 'left',
+                      fontFamily: 'inherit',
+                      fontSize: 'inherit',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '4px',
                     }}
                   >
-                    {t.subjectCompact}
-                    <span style={{ opacity: 0.4, fontSize: '0.7rem' }}>📋</span>
-                  </span>
+                    <span>{t.subjectCompact}</span>
+                    {copiedKey === `${t.id}-s` ? (
+                      <Check size={11} color="var(--accent-emerald)" aria-hidden="true" />
+                    ) : (
+                      <Copy size={11} style={{ opacity: 0.3 }} aria-hidden="true" />
+                    )}
+                  </button>
                 </td>
 
                 {/* Predicate */}
-                <td style={{ padding: '10px 14px', verticalAlign: 'top', maxWidth: '240px', wordBreak: 'break-all' }}>
-                  <span
-                    onClick={() => handleCopy(t.predicate, t.id + '-p')}
+                <td style={{ padding: '8px 12px', verticalAlign: 'top', maxWidth: '240px', wordBreak: 'break-all' }}>
+                  <button
+                    onClick={() => handleCopy(t.predicate, `${t.id}-p`)}
                     title={`Click to copy: ${t.predicate}`}
+                    className="btn-ghost"
                     style={{
                       color: 'var(--accent-violet)',
                       fontWeight: 600,
-                      cursor: 'pointer',
+                      padding: 0,
+                      textAlign: 'left',
+                      fontFamily: 'inherit',
+                      fontSize: 'inherit',
                     }}
                   >
                     {t.predicateCompact}
-                  </span>
+                  </button>
                 </td>
 
                 {/* Object */}
-                <td style={{ padding: '10px 14px', verticalAlign: 'top', maxWidth: '400px', wordBreak: 'break-all' }}>
+                <td style={{ padding: '8px 12px', verticalAlign: 'top', maxWidth: '380px', wordBreak: 'break-all' }}>
                   {t.isIri ? (
                     <a
                       href={t.object}
@@ -239,21 +277,25 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
                         color: 'var(--text-primary)',
                         textDecoration: 'none',
                         borderBottom: '1px dotted var(--text-muted)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
                       }}
                       title={t.object}
                     >
-                      {t.objectCompact} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>↗</span>
+                      <span>{t.objectCompact}</span>
+                      <ExternalLink size={11} style={{ opacity: 0.5 }} aria-hidden="true" />
                     </a>
                   ) : (
                     <div>
-                      <span style={{ color: '#e2e8f0' }}>"{t.objectCompact}"</span>
+                      <span style={{ color: 'var(--text-primary)' }}>"{t.objectCompact}"</span>
                       {t.datatype && (
-                        <span className="badge badge-cyan" style={{ fontSize: '0.68rem', marginLeft: '6px', padding: '1px 6px' }}>
+                        <span className="badge badge-cyan" style={{ fontSize: '0.66rem', marginLeft: '6px', padding: '1px 5px' }}>
                           ^^{t.datatype}
                         </span>
                       )}
                       {t.lang && (
-                        <span className="badge badge-emerald" style={{ fontSize: '0.68rem', marginLeft: '6px', padding: '1px 6px' }}>
+                        <span className="badge badge-emerald" style={{ fontSize: '0.66rem', marginLeft: '6px', padding: '1px 5px' }}>
                           @{t.lang}
                         </span>
                       )}
@@ -262,11 +304,11 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
                 </td>
 
                 {/* Graph */}
-                <td style={{ padding: '10px 14px', verticalAlign: 'top', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                <td style={{ padding: '8px 12px', verticalAlign: 'top', color: 'var(--text-muted)', fontSize: '0.74rem' }}>
                   {t.graph === 'default' ? (
-                    <span style={{ opacity: 0.6 }}>default</span>
+                    <span style={{ opacity: 0.5 }}>default</span>
                   ) : (
-                    <span className="badge badge-violet" style={{ fontSize: '0.68rem' }}>
+                    <span className="badge badge-violet" style={{ fontSize: '0.66rem' }}>
                       {t.graph}
                     </span>
                   )}
@@ -278,16 +320,19 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
       </div>
 
       {/* Pagination Bar */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: '18px',
-        paddingTop: '14px',
-        borderTop: '1px solid var(--border-subtle)',
-        fontSize: '0.8rem',
-        color: 'var(--text-secondary)',
-      }}>
+      <div
+        className="tabular-nums"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: '14px',
+          paddingTop: '12px',
+          borderTop: '1px solid var(--border-subtle)',
+          fontSize: '0.78rem',
+          color: 'var(--text-muted)',
+        }}
+      >
         <div>
           Showing {Math.min(filteredTriples.length, (page - 1) * pageSize + 1)} to{' '}
           {Math.min(filteredTriples.length, page * pageSize)} of {filteredTriples.length} triples
@@ -300,7 +345,7 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
             className="btn-secondary"
             style={{ padding: '4px 10px', fontSize: '0.75rem' }}
           >
-            ← Previous
+            Previous
           </button>
           <span>
             Page {page} of {totalPages}
@@ -311,7 +356,7 @@ export default function TriplesTable({ triples, turtleProv }: TriplesTableProps)
             className="btn-secondary"
             style={{ padding: '4px 10px', fontSize: '0.75rem' }}
           >
-            Next →
+            Next
           </button>
         </div>
       </div>

@@ -4,9 +4,10 @@ import MetricsBar from './MetricsBar';
 import TriplesTable from './TriplesTable';
 import ProvenanceTabs from './Provenance/ProvenanceTabs';
 import { executeWrxPlayground, type PlaygroundExecutionResult } from '../../services/wrx-client';
+import { Terminal, Database } from 'lucide-react';
 
 export default function PlaygroundSection() {
-  const [uri, setUri] = useState('https://zenodo.org/records/1234567');
+  const [uri, setUri] = useState('https://marineinfo.org/doc/person/38476');
   const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [resultData, setResultData] = useState<PlaygroundExecutionResult | null>(null);
@@ -39,26 +40,34 @@ export default function PlaygroundSection() {
   };
 
   return (
-    <section id="playground" style={{
-      padding: '80px 0 100px',
-      borderTop: '1px solid var(--border-subtle)',
-    }}>
+    <section
+      id="playground"
+      style={{
+        padding: '72px 0 96px',
+        borderTop: '1px solid var(--border-subtle)',
+      }}
+      aria-labelledby="playground-title"
+    >
       <div className="container">
         {/* Section Header */}
-        <div style={{ textAlign: 'center', maxWidth: '750px', margin: '0 auto 48px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '750px', margin: '0 auto 40px' }}>
           <span className="badge badge-cyan" style={{ marginBottom: '12px' }}>
             Interactive Studio
           </span>
-          <h2 style={{
-            fontSize: '2.5rem',
-            fontWeight: 800,
-            letterSpacing: '-0.03em',
-            marginBottom: '16px',
-          }}>
-            Live Discovery Playground
+          <h2
+            id="playground-title"
+            style={{
+              fontSize: '2.2rem',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              marginBottom: '12px',
+            }}
+          >
+            Live Discovery Studio
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.6 }}>
-            Run <code className="text-mono" style={{ color: 'var(--accent-cyan)' }}>wrx</code> directly in your browser. Enter any target URI to cascade through linksets, extract RDF quads, and audit W3C PROV-O provenance.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.02rem', lineHeight: 1.6 }}>
+            Execute <code className="text-mono" style={{ color: 'var(--accent-cyan)' }}>wrx</code> in your browser.
+            Dereference any target URI to cascade through RFC 9264 linksets, extract RDF quads, and inspect complete W3C PROV-O lineages.
           </p>
         </div>
 
@@ -71,7 +80,7 @@ export default function PlaygroundSection() {
           isRunning={status === 'running'}
         />
 
-        {/* Status / Metrics Bar */}
+        {/* Status / Metrics HUD */}
         <MetricsBar
           status={status}
           errorMessage={errorMessage}
@@ -79,18 +88,22 @@ export default function PlaygroundSection() {
           conceptualUri={resultData?.conceptualUri}
           tripleCount={resultData?.triples.length || 0}
           durationMs={resultData?.durationMs || 0}
+          currentUri={uri}
         />
 
         {/* Results Area */}
         {resultData && status === 'success' && (
           <div>
             {/* Tabular Triples View */}
-            <div style={{ marginBottom: '40px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <span className="badge badge-cyan">Discovered Knowledge Graph</span>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Extracted RDF Triples ({resultData.triples.length})
+            <div style={{ marginBottom: '36px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Database size={16} color="var(--accent-cyan)" aria-hidden="true" />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Extracted RDF Triples
                 </h3>
+                <span className="badge badge-cyan tabular-nums" style={{ fontSize: '0.72rem' }}>
+                  {resultData.triples.length}
+                </span>
               </div>
               <TriplesTable
                 triples={resultData.triples}
