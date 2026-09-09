@@ -18,12 +18,34 @@ export interface ExtractedRDF {
   provenance?: string
 }
 
-export interface RDFOverview {
-  found: boolean
-  uri?: string
-  format?: RDFFormat
-  mime?: string
-  provenance?: string
+export interface DiscoveryOptions {
+  /** If true, executes all stages without short-circuiting. Default: false */
+  all?: boolean;
+  /** Request timeout in milliseconds per stage. Default: 8000 */
+  timeout?: number;
+  /** Custom user agent */
+  userAgent?: string;
+}
+
+export interface StrategyTraceStep {
+  stage: number;
+  source: string;
+  label: string;
+  found: boolean;
+  standard?: string;
+  extraInfo?: string;
+  hits: Array<{
+    format: string;
+    url: string;
+    chars: number;
+  }>;
+}
+
+export interface DiscoveryOverview {
+  found: ExtractedRDF[];
+  notFound: string[];
+  trace: StrategyTraceStep[];
+  provenance?: string;
 }
 
 export interface ContentNegotiationResult {
