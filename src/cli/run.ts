@@ -170,29 +170,35 @@ export async function runWrxCli(args: string[] = process.argv.slice(2)): Promise
     logger.error(error instanceof Error ? error.message : String(error));
   }
 
-  if (parsed.provenance) {
-    if (parsed.all || parsed.report) {
-      if (!parsed.output) {
+  if (!parsed.output) {
+    if (parsed.provenance) {
+      if (parsed.all || parsed.report) {
         for (const doc of mergedDocuments) {
           console.log(`\n--- Extracted RDF (${doc.source}) ---`);
           console.log(doc.content);
         }
-      }
-      console.log('\n--- W3C PROV-O Provenance Graph ---');
-      if (overview && overview.provenance) {
-        console.log(overview.provenance);
-      }
-    } else {
-      if (outputDocument) {
-        if (!parsed.output) {
-          console.log(outputDocument.content);
-        }
         console.log('\n--- W3C PROV-O Provenance Graph ---');
-        if (outputDocument.provenance) {
-          console.log(outputDocument.provenance);
+        if (overview && overview.provenance) {
+          console.log(overview.provenance);
         }
       } else {
-        console.log('No RDF was discovered, thus no provenance was generated.');
+        if (outputDocument) {
+          console.log(outputDocument.content);
+          console.log('\n--- W3C PROV-O Provenance Graph ---');
+          if (outputDocument.provenance) {
+            console.log(outputDocument.provenance);
+          }
+        } else {
+          console.log('No RDF was discovered, thus no provenance was generated.');
+        }
+      }
+    } else {
+      if (parsed.all || parsed.report) {
+        for (const doc of mergedDocuments) {
+          console.log(doc.content);
+        }
+      } else if (outputDocument) {
+        console.log(outputDocument.content);
       }
     }
   }

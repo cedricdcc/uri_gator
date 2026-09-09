@@ -65,8 +65,8 @@ export async function harvestHtmlSignposting(ctx: HarvesterContext): Promise<Ext
         url: ctx.targetUri,
         content: embedded.content,
         mime: embedded.mime,
-        format: embedded.format as RDFFormat,
-        source: 'html-signposting',
+        format: embedded.mime,
+        source: 'embedded-script',
       });
     }
 
@@ -97,7 +97,6 @@ export async function harvestHtmlSignposting(ctx: HarvesterContext): Promise<Ext
           const body = await res.text();
 
           if (isRDFMime(mime) && body.trim().length > 0) {
-            const format = formatFromMime(mime);
             const outputUri = `${ctx.targetUri}#metadata`;
 
             ctx.tracker.recordDerivation(linkTarget, ctx.targetUri, actId, HTML_PLAN_URI);
@@ -108,8 +107,8 @@ export async function harvestHtmlSignposting(ctx: HarvesterContext): Promise<Ext
               url: linkTarget,
               content: body,
               mime,
-              format,
-              source: 'html-signposting',
+              format: mime,
+              source: 'signposting-html-link',
             });
           }
         }

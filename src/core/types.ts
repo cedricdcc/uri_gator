@@ -6,7 +6,14 @@ export type RDFFormat =
   | 'rdfxml'
   | 'trig'
   | 'n3'
-  | 'unknown'
+  | 'text/turtle'
+  | 'application/ld+json'
+  | 'application/rdf+xml'
+  | 'application/n-triples'
+  | 'application/n-quads'
+  | 'application/trig'
+  | 'text/n3'
+  | string;
 
 export interface ExtractedRDF {
   uri: string
@@ -29,6 +36,7 @@ export interface DiscoveryOptions {
 
 export interface StrategyTraceStep {
   stage: number;
+  strategy?: number;
   source: string;
   label: string;
   found: boolean;

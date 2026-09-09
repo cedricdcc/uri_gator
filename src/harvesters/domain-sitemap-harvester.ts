@@ -129,8 +129,8 @@ export async function harvestDomainSitemap(ctx: HarvesterContext): Promise<Extra
                     url: link.href,
                     content: body,
                     mime,
-                    format,
-                    source: 'domain-sitemap',
+                    format: mime,
+                    source: 'sitemap-signposting',
                   });
                 }
               }

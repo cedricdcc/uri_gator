@@ -7,6 +7,7 @@ export interface HarvesterContext {
   tracker: ProvenanceTracker;
   visitedUrls: Set<string>;
   timeout: number;
+  all?: boolean;
   userAgent?: string;
   initialResponse?: Response;
   initialBody?: string;

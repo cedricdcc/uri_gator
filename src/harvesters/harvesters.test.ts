@@ -44,9 +44,9 @@ describe('Discovery Harvesters', () => {
     const hits = await harvestConneg(ctx);
 
     expect(hits).toHaveLength(1);
-    expect(hits[0].format).toBe('turtle');
+    expect(hits[0].format).toBe('text/turtle');
     expect(hits[0].content).toBe(BODY);
-    expect(hits[0].source).toBe('conneg');
+    expect(hits[0].source).toBe('content-negotiation');
     expect(ctx.initialBody).toBe(BODY);
   });
 
@@ -117,9 +117,9 @@ describe('Discovery Harvesters', () => {
 
     const hits = await harvestHtmlSignposting(ctx);
     expect(hits).toHaveLength(1);
-    expect(hits[0].format).toBe('jsonld');
+    expect(hits[0].format).toBe('application/ld+json');
     expect(hits[0].content).toBe(JSONLD);
-    expect(hits[0].source).toBe('html-signposting');
+    expect(hits[0].source).toBe('embedded-script');
   });
 
   test('harvestDomainSitemap discovers metadata via robots.txt and sitemap.xml', async () => {
@@ -161,6 +161,6 @@ describe('Discovery Harvesters', () => {
     expect(hits).toHaveLength(1);
     expect(hits[0].content).toBe(RDF_CONTENT);
     expect(hits[0].url).toBe(RDF_URL);
-    expect(hits[0].source).toBe('domain-sitemap');
+    expect(hits[0].source).toBe('sitemap-signposting');
   });
 });
