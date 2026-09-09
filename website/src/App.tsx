@@ -1,14 +1,16 @@
 import React from 'react';
+import Navbar from './components/Navbar';
+import Hero from './components/Hero';
+import Concepts from './components/Concepts';
 
 export default function App() {
   return (
-    <div className="container" style={{ paddingTop: '80px', textAlign: 'center' }}>
-      <h1 className="gradient-text" style={{ fontSize: '3rem', fontWeight: 800 }}>
-        wrx
-      </h1>
-      <p style={{ color: 'var(--text-secondary)', marginTop: '12px' }}>
-        Zero-configuration Linked Data Discovery & Cascading RDF Extraction
-      </p>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Navbar />
+      <main style={{ flex: 1 }}>
+        <Hero />
+        <Concepts />
+      </main>
     </div>
   );
 }
