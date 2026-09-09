@@ -1,6 +1,5 @@
-import { STRATEGY_ORDER } from '../core/constants';
 import type { ExtractedRDF, LinkRelationObservation, RDFOverview } from '../core/types';
-import { collectLinkRelationsForUri } from '../core/link-parser';
+import { collectLinkRelationsForUri } from './link-relations';
 import { extractAllRDF, extractRDF, setLogLevel } from '../../wrx.ts';
 import { logger } from '../core/logger';
 import { getCliUsage, parseCliArgs } from './args';
