@@ -1,6 +1,0 @@
-{
-  "name": "WRX Explorer",
-  "description": "Visualize the web resource extraction flow for RDF metadata discovery with WRX.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
-}
