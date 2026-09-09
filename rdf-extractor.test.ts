@@ -839,7 +839,7 @@ describe('extractAllRDF', () => {
 
     const overview = await extractAllRDF(DATASET);
 
-    expect(overview.trace).toHaveLength(29);
+    expect(overview.trace).toHaveLength(4);
     expect(overview.trace.map((s) => s.source)).toContain('content-negotiation');
     expect(overview.trace.map((s) => s.source)).toContain('sitemap-signposting');
 
@@ -854,8 +854,8 @@ describe('extractAllRDF', () => {
       },
     ]);
 
-    const sitemapStep = overview.trace[24];
-    expect(sitemapStep.strategy).toBe(25);
+    const sitemapStep = overview.trace[3];
+    expect(sitemapStep.strategy).toBe(4);
     expect(sitemapStep.found).toBe(false);
     expect(sitemapStep.hits).toEqual([]);
   });

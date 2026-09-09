@@ -5,7 +5,21 @@ Web resource extraction for RDF metadata discovery.
 
 ## Install
 
-Install directly from GitHub in another Bun project:
+### Option 1: GitHub Release Tarball (Zero-NPM Registry)
+
+Install the release tarball directly from GitHub Releases:
+
+```bash
+# Latest release tarball
+bun add https://github.com/cedricdcc/wrx/releases/latest/download/wrx.tgz
+
+# Pinned release version
+bun add https://github.com/cedricdcc/wrx/releases/download/v0.1.0/wrx-0.1.0.tgz
+```
+
+### Option 2: Direct from GitHub Repository
+
+Install directly from GitHub:
 
 ```bash
 bun add github:cedricdcc/wrx

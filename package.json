@@ -4,6 +4,9 @@
   "description": "Bun TypeScript module for web resource extraction and RDF metadata discovery using cascading strategies.",
   "module": "./wrx.js",
   "types": "./wrx.ts",
+  "bin": {
+    "wrx": "./wrx.js"
+  },
   "exports": {
     ".": "./wrx.js"
   },
@@ -12,9 +15,11 @@
   "files": [
     "wrx.js",
     "wrx.ts",
+    "src",
     "bun-globals.d.ts",
     "README.md",
-    "DOCUMENTATION.md"
+    "DOCUMENTATION.md",
+    "LICENSE"
   ],
   "repository": {
     "type": "git",

@@ -6,7 +6,14 @@ export type RDFFormat =
   | 'rdfxml'
   | 'trig'
   | 'n3'
-  | 'unknown'
+  | 'text/turtle'
+  | 'application/ld+json'
+  | 'application/rdf+xml'
+  | 'application/n-triples'
+  | 'application/n-quads'
+  | 'application/trig'
+  | 'text/n3'
+  | string;
 
 export interface ExtractedRDF {
   uri: string
@@ -18,12 +25,35 @@ export interface ExtractedRDF {
   provenance?: string
 }
 
-export interface RDFOverview {
-  found: boolean
-  uri?: string
-  format?: RDFFormat
-  mime?: string
-  provenance?: string
+export interface DiscoveryOptions {
+  /** If true, executes all stages without short-circuiting. Default: false */
+  all?: boolean;
+  /** Request timeout in milliseconds per stage. Default: 8000 */
+  timeout?: number;
+  /** Custom user agent */
+  userAgent?: string;
+}
+
+export interface StrategyTraceStep {
+  stage: number;
+  strategy?: number;
+  source: string;
+  label: string;
+  found: boolean;
+  standard?: string;
+  extraInfo?: string;
+  hits: Array<{
+    format: string;
+    url: string;
+    chars: number;
+  }>;
+}
+
+export interface DiscoveryOverview {
+  found: ExtractedRDF[];
+  notFound: string[];
+  trace: StrategyTraceStep[];
+  provenance?: string;
 }
 
 export interface ContentNegotiationResult {
@@ -65,38 +95,3 @@ export interface ParsedCliArgs {
   report?: boolean
   verbose?: boolean
 }
-
-export type StrategyName =
-  // Quadrant 1
-  | 'content-negotiation'
-  | 'signposting-link-header'
-  | 'signposting-html-link'
-  | 'embedded-script'
-  | 'foaf'
-  | 'same-as'
-  | 'skos'
-  | 'rdf-collections'
-  | 'provenance'
-  | 'collection-membership'
-  // Quadrant 2
-  | 'html-links'
-  | 'rdfa'
-  | 'microdata'
-  | 'open-graph'
-  | 'dublin-core'
-  | 'canonical'
-  | 'http-link-relations'
-  | 'pagination'
-  | 'reverse-links'
-  | 'circular-graphs'
-  // Quadrant 3
-  | 'linkset'
-  | 'dcat-catalog'
-  | 'well-known'
-  | 'resource-map'
-  // Quadrant 4
-  | 'sitemap-signposting'
-  | 'rss-feed'
-  | 'atom-feed'
-  | 'manifest'
-  | 'api-discovery'

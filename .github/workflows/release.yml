@@ -1,0 +1,42 @@
+name: Release Bun Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    name: Build and Release Tarball
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Run Tests
+        run: bun test
+
+      - name: Pack Bun Package
+        id: pack
+        run: |
+          TARBALL=$(bun pm pack --quiet)
+          echo "TARBALL_NAME=$TARBALL" >> $GITHUB_ENV
+          # Create a version-agnostic tarball so users can always install via .../releases/latest/download/wrx.tgz
+          cp "$TARBALL" wrx.tgz
+
+      - name: Create GitHub Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.TARBALL_NAME }}
+            wrx.tgz
+          generate_release_notes: true

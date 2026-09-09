@@ -4,13 +4,13 @@ const USAGE = `Usage: bun run wrx.js [options] <URI>
 
 Options:
   -h, --help           Show this help message
-  --all                Explore all extraction strategies
-  --extend-links       Print modeled link relations
+  -a, --all            Explore all extraction strategies
   -p, --provenance     Print W3C PROV-O provenance
+  -o, --output <path>  Write extracted RDF to a file
+  -v, --verbose        Enable verbose debug logging
+  --extend-links       Print modeled link relations
   --profile            Print discovered profile URIs
   --report             Print the discovery trace in a tabular format
-  -v, --verbose        Enable verbose debug logging
-  -o, --output <path>  Write extracted RDF to a file
 
 Examples:
   bun run wrx.js https://example.org/dataset
@@ -39,7 +39,7 @@ export function parseCliArgs(args: string[]): ParsedCliArgs {
       help = true;
       continue;
     }
-    if (arg === '--all') {
+    if (arg === '--all' || arg === '-a') {
       all = true;
       continue;
     }

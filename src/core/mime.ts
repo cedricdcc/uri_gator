@@ -1,4 +1,5 @@
 import { RDF_MIME_SET } from './constants'
+import type { RDFFormat } from './types'
 
 export function looksLikeJsonLd(text: string): boolean {
   try {
@@ -33,4 +34,16 @@ export function resolveRdfFormat(
     return declaredType;
   }
   return null;
+}
+
+export function formatFromMime(mime: string): RDFFormat {
+  const m = (mime || '').toLowerCase().trim();
+  if (m === 'text/turtle' || m === 'application/turtle') return 'turtle';
+  if (m === 'application/ld+json') return 'jsonld';
+  if (m === 'application/n-triples') return 'ntriples';
+  if (m === 'application/n-quads') return 'nquads';
+  if (m === 'application/rdf+xml') return 'rdfxml';
+  if (m === 'application/trig') return 'trig';
+  if (m === 'text/n3') return 'n3';
+  return 'unknown';
 }
