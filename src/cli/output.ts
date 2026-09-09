@@ -119,31 +119,50 @@ function parseRdfText(content: string, mime: string, baseIRI?: string): Promise<
 
 function relationToQuads(relation: LinkRelationObservation): ReturnType<typeof DataFactory.quad>[] {
   const rdfType = DataFactory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
-  const xhtml = 'http://www.w3.org/1999/xhtml#';
-  const subject = DataFactory.blankNode();
+  const rs = 'http://www.openarchives.org/rs/terms/';
+  const anchorNode = DataFactory.namedNode(relation.anchor ?? relation.href);
+  const linkNode = DataFactory.blankNode();
   const quads: ReturnType<typeof DataFactory.quad>[] = [
-    DataFactory.quad(subject, rdfType, DataFactory.namedNode(`${xhtml}link`)),
-    DataFactory.quad(subject, DataFactory.namedNode(`${xhtml}anchor`), DataFactory.namedNode(relation.anchor ?? relation.href)),
+    DataFactory.quad(anchorNode, DataFactory.namedNode(`${rs}ln`), linkNode),
+    DataFactory.quad(linkNode, rdfType, DataFactory.namedNode(`${rs}ln`)),
     DataFactory.quad(
-      subject,
-      DataFactory.namedNode(`${xhtml}rel`),
+      linkNode,
+      DataFactory.namedNode(`${rs}rel`),
       /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(relation.rel)
         ? DataFactory.namedNode(relation.rel)
         : DataFactory.literal(relation.rel)
     ),
-    DataFactory.quad(subject, DataFactory.namedNode(`${xhtml}href`), DataFactory.namedNode(relation.href)),
+    DataFactory.quad(linkNode, DataFactory.namedNode(`${rs}href`), DataFactory.namedNode(relation.href)),
   ];
 
-  for (const option of relation.options ?? []) {
-    const optionNode = DataFactory.blankNode();
-    quads.push(DataFactory.quad(subject, DataFactory.namedNode(`${xhtml}option`), optionNode));
-    quads.push(DataFactory.quad(optionNode, rdfType, DataFactory.namedNode(`${xhtml}LinkOption`)));
-    quads.push(DataFactory.quad(optionNode, DataFactory.namedNode(`${xhtml}optionKey`), DataFactory.literal(option.name ?? '')));
-    quads.push(DataFactory.quad(optionNode, DataFactory.namedNode(`${xhtml}optionVal`), DataFactory.literal(option.value ?? '')));
+  if (relation.title) {
+    quads.push(DataFactory.quad(linkNode, DataFactory.namedNode(`${rs}title`), DataFactory.literal(relation.title)));
+  }
+  if (relation.hreflang) {
+    quads.push(DataFactory.quad(linkNode, DataFactory.namedNode(`${rs}hreflang`), DataFactory.literal(relation.hreflang)));
+  }
+  if (relation.media) {
+    quads.push(DataFactory.quad(linkNode, DataFactory.namedNode(`${rs}media`), DataFactory.literal(relation.media)));
   }
 
-  if ((relation.options ?? []).length === 0) {
-    quads.push(DataFactory.quad(subject, DataFactory.namedNode(`${xhtml}option`), DataFactory.blankNode()));
+  for (const option of relation.options ?? []) {
+    const optName = (option.name ?? '').trim();
+    const optVal = (option.value ?? '').trim();
+    if (!optName) continue;
+
+    if (optName.toLowerCase() === 'type') {
+      quads.push(DataFactory.quad(linkNode, DataFactory.namedNode(`${rs}type`), DataFactory.literal(optVal)));
+    } else if (optName.toLowerCase() === 'profile') {
+      quads.push(
+        DataFactory.quad(
+          linkNode,
+          DataFactory.namedNode(`${rs}profile`),
+          /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(optVal) ? DataFactory.namedNode(optVal) : DataFactory.literal(optVal)
+        )
+      );
+    } else {
+      quads.push(DataFactory.quad(linkNode, DataFactory.namedNode(`${rs}${optName}`), DataFactory.literal(optVal)));
+    }
   }
 
   return quads;
@@ -182,6 +201,11 @@ async function mergeRdfDocuments(
   return merged;
 }
 
+const DEFAULT_PREFIXES: Record<string, string> = {
+  prov: 'http://www.w3.org/ns/prov#',
+  rs: 'http://www.openarchives.org/rs/terms/',
+};
+
 async function serializeMergedQuads(
   quads: ReturnType<typeof DataFactory.quad>[],
   outputMime: string
@@ -209,7 +233,13 @@ async function serializeMergedQuads(
     throw new Error(`Unsupported output MIME for merged RDF serialization: ${outputMime}`);
   }
 
-  const writer = new Writer({ format: writerFormat as never });
+  const writer = new Writer({
+    format: writerFormat as never,
+    prefixes:
+      normalizedMime === 'text/turtle' || normalizedMime === 'text/n3' || normalizedMime === 'application/trig'
+        ? DEFAULT_PREFIXES
+        : undefined,
+  });
   writer.addQuads(quads as never);
   return await new Promise<string>((resolve, reject) => {
     writer.end((error: unknown, result?: string) => {
@@ -297,14 +327,23 @@ export async function writeRdfOutput(document: ExtractedRDF, outputPath: string)
   return { ...target, tripleCount };
 }
 
+export async function serializeMergedRdf(
+  documents: ExtractedRDF[],
+  relations: LinkRelationObservation[],
+  outputMime = 'text/turtle'
+): Promise<{ content: string; tripleCount: number }> {
+  const merged = await mergeRdfDocuments(documents, relations);
+  const content = await serializeMergedQuads(merged, outputMime);
+  return { content, tripleCount: merged.length };
+}
+
 export async function writeMergedRdfOutput(
   documents: ExtractedRDF[],
   relations: LinkRelationObservation[],
   outputPath: string
 ): Promise<ResolvedOutputTarget> {
   const target = resolveOutputTarget(outputPath);
-  const merged = await mergeRdfDocuments(documents, relations);
-  const serialized = await serializeMergedQuads(merged, target.mime);
-  await Bun.write(target.path, serialized);
-  return { ...target, tripleCount: merged.length };
+  const { content, tripleCount } = await serializeMergedRdf(documents, relations, target.mime);
+  await Bun.write(target.path, content);
+  return { ...target, tripleCount };
 }

@@ -3,7 +3,7 @@ import { collectLinkRelationsForUri } from './link-relations';
 import { extractAllRDF, extractRDF, setLogLevel } from '../../wrx.ts';
 import { logger } from '../core/logger';
 import { getCliUsage, parseCliArgs } from './args';
-import { writeMergedRdfOutput, writeRdfOutput } from './output';
+import { serializeMergedRdf, writeMergedRdfOutput, writeRdfOutput } from './output';
 
 function escapeLiteral(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -32,22 +32,34 @@ function renderLinkRelationsJson(relations: LinkRelationObservation[]): string {
 }
 
 function renderLinkRelationsTurtle(relations: LinkRelationObservation[]): string {
-  const lines: string[] = ['@prefix xhtml: <http://www.w3.org/1999/xhtml>.', ''];
+  const lines: string[] = ['@prefix rs: <http://www.openarchives.org/rs/terms/>.', ''];
   for (const rel of relations) {
-    lines.push('[] a xhtml:link;');
-    lines.push(`   xhtml:anchor <${rel.anchor}>;`);
-    lines.push(`   xhtml:rel ${renderRelForTurtle(rel.rel)};`);
-    lines.push(`   xhtml:href <${rel.href}>;`);
-    if ((rel.options ?? []).length > 0) {
-      const optionNodes = (rel.options ?? []).map((opt) => {
-        const optName = (opt as { name?: string; key?: string }).name ?? (opt as { name?: string; key?: string }).key ?? '';
-        const optVal = (opt as { value?: string }).value ?? '';
-        return `[ a xhtml:LinkOption;\n       xhtml:optionKey \"${escapeLiteral(optName)}\";\n       xhtml:optionVal \"${escapeLiteral(optVal)}\" ]`;
-      });
-      lines.push(`   xhtml:option ${optionNodes.join(',\n                ')}.`);
-    } else {
-      lines.push('   xhtml:option [].');
+    const anchor = rel.anchor ?? rel.href;
+    lines.push(`<${anchor}> rs:ln [`);
+    lines.push('   a rs:ln;');
+    lines.push(`   rs:rel ${renderRelForTurtle(rel.rel)};`);
+    lines.push(`   rs:href <${rel.href}>;`);
+    if (rel.title) {
+      lines.push(`   rs:title "${escapeLiteral(rel.title)}";`);
     }
+    if (rel.hreflang) {
+      lines.push(`   rs:hreflang "${escapeLiteral(rel.hreflang)}";`);
+    }
+    if (rel.media) {
+      lines.push(`   rs:media "${escapeLiteral(rel.media)}";`);
+    }
+    for (const opt of rel.options ?? []) {
+      const optName = (opt.name ?? '').trim();
+      const optVal = (opt.value ?? '').trim();
+      if (!optName) continue;
+      if (optName.toLowerCase() === 'profile' && isAbsoluteUri(optVal)) {
+        lines.push(`   rs:profile <${optVal}>;`);
+      } else {
+        lines.push(`   rs:${optName} "${escapeLiteral(optVal)}";`);
+      }
+    }
+    lines[lines.length - 1] = lines[lines.length - 1].replace(/;$/, '');
+    lines.push('].');
     lines.push('');
   }
   return lines.join('\n').trimEnd();
@@ -100,6 +112,10 @@ async function writeMergedOutputIfRequested(
     return;
   }
 
+  if (documents.length === 0 && relations.length === 0) {
+    throw new Error('Cannot write output because no RDF was discovered');
+  }
+
   const target = await writeMergedRdfOutput(documents, relations, parsed.output);
   logger.info({ path: target.path, mime: target.mime, triples: target.tripleCount }, 'Saved merged RDF output to %s (%d triples)', target.path, target.tripleCount);
 }
@@ -140,12 +156,35 @@ export async function runWrxCli(args: string[] = process.argv.slice(2)): Promise
     mergedDocuments = (overview.found ?? []).filter((doc: any) => Boolean(doc));
 
     outputDocument = selectPrimaryRdf(overview);
+
+    if (parsed.provenance && overview?.provenance) {
+      mergedDocuments.push({
+        uri: url,
+        content: overview.provenance,
+        mime: 'text/turtle',
+        format: 'turtle',
+        source: 'provenance',
+      });
+    }
   } else {
     const result = await extractRDF(url);
     outputDocument = result;
 
     if (parsed.extendLinks || parsed.profile) {
       mergedRelations = await collectLinkRelationsForUri(url);
+    }
+
+    if (result) {
+      mergedDocuments = [result];
+      if (parsed.provenance && result.provenance) {
+        mergedDocuments.push({
+          uri: url,
+          content: result.provenance,
+          mime: 'text/turtle',
+          format: 'turtle',
+          source: 'provenance',
+        });
+      }
     }
   }
 
@@ -159,7 +198,14 @@ export async function runWrxCli(args: string[] = process.argv.slice(2)): Promise
 
   try {
     if (parsed.output) {
-      if (parsed.extendLinks || parsed.all || parsed.report) {
+      if (
+        parsed.extendLinks ||
+        parsed.all ||
+        parsed.report ||
+        parsed.provenance ||
+        mergedDocuments.length > 1 ||
+        mergedRelations.length > 0
+      ) {
         await writeMergedOutputIfRequested(parsed, mergedDocuments, mergedRelations);
       } else {
         await writeOutputIfRequested(parsed, outputDocument);
@@ -171,25 +217,11 @@ export async function runWrxCli(args: string[] = process.argv.slice(2)): Promise
 
   if (!parsed.output) {
     if (parsed.provenance) {
-      if (parsed.all || parsed.report) {
-        for (const doc of mergedDocuments) {
-          console.log(`\n--- Extracted RDF (${doc.source}) ---`);
-          console.log(doc.content);
-        }
-        console.log('\n--- W3C PROV-O Provenance Graph ---');
-        if (overview && overview.provenance) {
-          console.log(overview.provenance);
-        }
+      if (mergedDocuments.length > 0 || mergedRelations.length > 0) {
+        const { content } = await serializeMergedRdf(mergedDocuments, mergedRelations, 'text/turtle');
+        console.log(content.trimEnd());
       } else {
-        if (outputDocument) {
-          console.log(outputDocument.content);
-          console.log('\n--- W3C PROV-O Provenance Graph ---');
-          if (outputDocument.provenance) {
-            console.log(outputDocument.provenance);
-          }
-        } else {
-          console.log('No RDF was discovered, thus no provenance was generated.');
-        }
+        console.log('No RDF was discovered, thus no provenance was generated.');
       }
     } else {
       if (parsed.all || parsed.report) {
@@ -198,6 +230,9 @@ export async function runWrxCli(args: string[] = process.argv.slice(2)): Promise
         }
       } else if (outputDocument) {
         console.log(outputDocument.content);
+      }
+      if (parsed.extendLinks && mergedRelations.length > 0) {
+        console.log(renderLinkRelationsTurtle(mergedRelations));
       }
     }
   }

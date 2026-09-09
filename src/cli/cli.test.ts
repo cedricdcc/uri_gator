@@ -89,7 +89,7 @@ describe('CLI Runner Integration', () => {
     expect(logs.join('\n')).toContain(TURTLE);
   });
 
-  test('runs with -p and prints pure W3C PROV-O provenance', async () => {
+  test('runs with -p and prints pure W3C PROV-O provenance as a single RDF stream', async () => {
     const URI = 'https://cli.example.org/prov-test';
     const TURTLE = '@prefix ex: <https://example.org/> . ex:s ex:p ex:o .';
 
@@ -106,9 +106,70 @@ describe('CLI Runner Integration', () => {
 
     const { logs } = await captureCliOutput(['-p', URI]);
     const output = logs.join('\n');
-    expect(output).toContain('W3C PROV-O Provenance Graph');
+    expect(output).not.toContain('W3C PROV-O Provenance Graph');
     expect(output).toContain('@prefix prov: <http://www.w3.org/ns/prov#>');
+    expect(output).toContain('prov:Entity');
+    expect(output).toContain('https://example.org/s');
     expect(output).not.toContain('@prefix wrx:');
+  });
+
+  test('runs with -p and -o to write merged data and provenance triples to file', async () => {
+    const URI = 'https://cli.example.org/prov-file-test';
+    const TURTLE = '@prefix ex: <https://example.org/> . ex:s ex:p ex:o .';
+    const outputFile = 'test-cli-prov-output.ttl';
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === URI) {
+        return new Response(TURTLE, {
+          status: 200,
+          headers: { 'content-type': 'text/turtle' },
+        });
+      }
+      return new Response('Not found', { status: 404 });
+    }) as typeof fetch;
+
+    try {
+      await captureCliOutput(['-p', '-o', outputFile, URI]);
+      const fileContent = await Bun.file(outputFile).text();
+      expect(fileContent).toContain('prov:Entity');
+      expect(fileContent).toContain('prov:Activity');
+      expect(fileContent).toContain('https://example.org/s');
+    } finally {
+      await Bun.file(outputFile).delete().catch(() => undefined);
+    }
+  });
+
+  test('writes modeled link relations with rs:ln under openarchives.org/rs/terms/ to file', async () => {
+    const URI = 'https://cli.example.org/links-test';
+    const TURTLE = '@prefix ex: <https://example.org/> . ex:s ex:p ex:o .';
+    const outputFile = 'test-cli-links-output.ttl';
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === URI) {
+        return new Response(TURTLE, {
+          status: 200,
+          headers: {
+            'content-type': 'text/turtle',
+            'link': '<https://cli.example.org/profile-1>; rel="profile"',
+          },
+        });
+      }
+      return new Response('Not found', { status: 404 });
+    }) as typeof fetch;
+
+    try {
+      await captureCliOutput(['--extend-links', '-o', outputFile, URI]);
+      const fileContent = await Bun.file(outputFile).text();
+      expect(fileContent).toContain('rs:ln');
+      expect(fileContent).toContain('rs:rel');
+      expect(fileContent).toContain('rs:href');
+      expect(fileContent).toContain(`<${URI}> rs:ln`);
+      expect(fileContent).not.toContain('xhtml:link');
+    } finally {
+      await Bun.file(outputFile).delete().catch(() => undefined);
+    }
   });
 
   test('runs with -a and executes exhaustive discovery', async () => {
