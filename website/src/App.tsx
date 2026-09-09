@@ -3,6 +3,8 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Concepts from './components/Concepts';
 import UsageGuides from './components/UsageGuides';
+import PlaygroundSection from './components/Playground/PlaygroundSection';
+import Footer from './components/Footer';
 
 export default function App() {
   return (
@@ -12,7 +14,9 @@ export default function App() {
         <Hero />
         <Concepts />
         <UsageGuides />
+        <PlaygroundSection />
       </main>
+      <Footer />
     </div>
   );
 }
